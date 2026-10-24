@@ -1,5 +1,5 @@
 'use strict';
-require('dotenv').config();
+require('dotenv').config({ path: require('node:path').join(__dirname, '.env') });
 const { Client, GatewayIntentBits, ActivityType, Events } = require('discord.js');
 
 const TOKEN = process.env.DISCORD_TOKEN;
