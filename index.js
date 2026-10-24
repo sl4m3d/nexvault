@@ -1,47 +1,14 @@
 'use strict';
-const fs = require('node:fs');
-const path = require('node:path');
-const envPath = path.join(__dirname, '.env');
-const examplePath = path.join(__dirname, '.env.example');
-
-// Always read configuration from the bot's own directory, not the shell's current directory.
-if (!fs.existsSync(envPath)) {
-  if (fs.existsSync(examplePath)) {
-    fs.copyFileSync(examplePath, envPath, fs.constants.COPYFILE_EXCL);
-    console.error(`Created ${envPath} from .env.example because .env did not exist.`);
-    console.error('Open the new .env file and replace every placeholder with your real credentials, then run npm start again.');
-  } else {
-    console.error(`Configuration file not found: ${envPath}`);
-    console.error('Restore .env.example from the bot ZIP, then run npm start again.');
-  }
-  process.exit(1);
-}
-
-require('dotenv').config({ path: envPath });
+require('dotenv').config();
 const { Client, GatewayIntentBits, ActivityType, Events } = require('discord.js');
 
-const TOKEN = (process.env.DISCORD_TOKEN || '').trim();
-const CLIENT_ID = (process.env.CLIENT_ID || '').trim();
-const API_URL = (process.env.NEXVAULT_API_URL || '').trim();
-const API_SECRET = (process.env.NEXVAULT_API_SECRET || '').trim();
+const TOKEN = process.env.DISCORD_TOKEN;
+const CLIENT_ID = process.env.CLIENT_ID;
+const API_URL = process.env.NEXVAULT_API_URL;
+const API_SECRET = process.env.NEXVAULT_API_SECRET;
 const ROTATION_MS = 120_000;
-const missing = [];
-if (!TOKEN || TOKEN === 'YOUR_DISCORD_BOT_TOKEN') missing.push('DISCORD_TOKEN');
-if (!CLIENT_ID || CLIENT_ID === 'YOUR_DISCORD_APPLICATION_CLIENT_ID') missing.push('CLIENT_ID');
-if (!API_URL || !/^https?:\/\//i.test(API_URL)) missing.push('NEXVAULT_API_URL (must be a full http(s) URL)');
-if (!API_SECRET || /PASTE_KEY|CHANGE_THIS|YOUR_/.test(API_SECRET)) missing.push('NEXVAULT_API_SECRET');
-if (missing.length) {
-  console.error('The .env file was found, but these settings are missing or still placeholders:');
-  for (const item of missing) console.error(`  - ${item}`);
-  console.error(`Edit this file on your device: ${envPath}`);
-  console.error('Do not share your .env file or its secrets.');
-  process.exit(1);
-}
-try {
-  const parsedApiUrl = new URL(API_URL);
-  if (!['http:', 'https:'].includes(parsedApiUrl.protocol)) throw new Error('unsupported protocol');
-} catch {
-  console.error('NEXVAULT_API_URL is not a valid URL. Example: https://nexvault.is-great.org/api/index.php');
+if (!TOKEN || !CLIENT_ID || !API_URL || !API_SECRET || API_SECRET.includes('CHANGE_THIS')) {
+  console.error('Missing configuration. Copy .env.example to .env and fill in every required value.');
   process.exit(1);
 }
 
@@ -59,8 +26,13 @@ async function api(action, options = {}) {
     body: options.body ? JSON.stringify(options.body) : undefined,
     signal: AbortSignal.timeout(12_000),
   });
+  const contentType = response.headers.get('content-type') || '(missing content-type)';
+  const raw = await response.text();
   let data;
-  try { data = await response.json(); } catch { throw new Error('Website API returned an invalid response.'); }
+  try { data = JSON.parse(raw); } catch {
+    const preview = raw.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+    throw new Error(`Website API returned non-JSON (HTTP ${response.status}; ${contentType}). Response preview: ${preview || '(empty response)'}`);
+  }
   if (!response.ok) throw new Error(data.error || `Website API error (${response.status}).`);
   return data;
 }
