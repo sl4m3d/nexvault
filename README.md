@@ -18,7 +18,7 @@ InfinityFree is for the PHP website; do not try to run this bot as a persistent 
 
 ## Setup
 
-1. Copy `.env.example` to `.env` in this same folder. Both `index.js` and `deploy-commands.js` explicitly load this folder’s `.env`, even if the process is started from another working directory.
+1. Run `npm start` once. If `.env` is missing, the bot automatically creates it from `.env.example` in the bot folder and exits with setup instructions. Edit that `.env` file and replace every placeholder. Both `index.js` and `deploy-commands.js` read the `.env` in this folder, even if the process is started from another working directory.
 2. Fill in `DISCORD_TOKEN`, `CLIENT_ID`, and `NEXVAULT_API_URL`.
 3. Log in to the website as `admin`, open Admin Panel, and use **Generate / rotate bot API key**. Copy the key shown once and paste it into `NEXVAULT_API_SECRET` in `.env`. You do not need a local computer or PHP CLI to create it. If lost, generate a replacement in Admin Panel; the old key is immediately revoked.
 4. In this directory, run `npm install`.

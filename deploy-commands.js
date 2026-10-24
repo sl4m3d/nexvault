@@ -1,5 +1,12 @@
 'use strict';
-require('dotenv').config({ path: require('node:path').join(__dirname, '.env') });
+const fs = require('node:fs');
+const path = require('node:path');
+const envPath = path.join(__dirname, '.env');
+if (!fs.existsSync(envPath)) {
+  console.error(`Missing ${envPath}. Run npm start once to create it from .env.example, then fill in your credentials.`);
+  process.exit(1);
+}
+require('dotenv').config({ path: envPath });
 const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
 if (!DISCORD_TOKEN || !CLIENT_ID) {
