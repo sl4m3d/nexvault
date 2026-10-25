@@ -4,10 +4,9 @@ const { Client, GatewayIntentBits, ActivityType, Events } = require('discord.js'
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
-const API_URL = process.env.NEXVAULT_API_URL;
-const API_SECRET = process.env.NEXVAULT_API_SECRET;
+const API_URL = process.env.NEXVAULT_API;
 const ROTATION_MS = 120_000;
-if (!TOKEN || !CLIENT_ID || !API_URL || !API_SECRET || API_SECRET.includes('CHANGE_THIS')) {
+if (!TOKEN || !CLIENT_ID || !API_URL || API_URL.includes('PASTE_THE_COMPLETE_API_URL') || !/^https?:\/\//i.test(API_URL)) {
   console.error('Missing configuration. Copy .env.example to .env and fill in every required value.');
   process.exit(1);
 }
@@ -22,7 +21,7 @@ async function api(action, options = {}) {
   url.searchParams.set('action', action);
   const response = await fetch(url, {
     method: options.body ? 'POST' : 'GET',
-    headers: { Authorization: `Bearer ${API_SECRET}`, ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
+    headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}) },
     body: options.body ? JSON.stringify(options.body) : undefined,
     signal: AbortSignal.timeout(12_000),
   });
