@@ -1,6 +1,6 @@
 # NexVault Discord Bot (JavaScript)
 
-Discord.js v14 bot for `NexVault`. It provides `/generate category:<category>`, sends codes by DM, checks configured guild/role requirements, and keeps its presence at **Do Not Disturb** while rotating the Watching activity every 120 seconds:
+Discord.js v14 bot for `NexVault`. It provides `/generate category:<category>` and `/status`, sends codes by DM, checks configured guild/role requirements, and keeps its presence at **Do Not Disturb** while rotating the Watching activity every 120 seconds:
 
 1. `Watching X available codes`
 2. `Watching made by .sl4m3d`
@@ -24,7 +24,7 @@ InfinityFree is for the PHP website; do not try to run this bot as a persistent 
 4. In this directory, run `npm install`.
 5. Optionally set `GUILD_ID` for quick testing in one server. Leave it blank to register the command globally (global command propagation may take time).
 6. Run `npm run deploy-commands` once whenever command definitions change.
-7. Run `npm start` and keep the process online.
+7. Run `npm start` and keep the process online. Use `/status` in Discord to test the website API connection and see latency, categories, and available codes.
 8. In the Discord Developer Portal, set the bot's display name to `NexVault`, invite it with the `bot` and `applications.commands` scopes, and grant it permission to send messages in DMs. The bot uses only the standard Guilds intent; role requirements are checked against the role IDs delivered with the interaction, so no privileged Server Members Intent is required.
 
 ## Category requirements
@@ -35,6 +35,10 @@ If DMs are closed, the bot tells the user to enable them and retry. The API retu
 
 ## Presence details
 
-The first activity is set when the bot becomes ready, then the activity changes every 120 seconds. The bot sets `dnd` on each update. If the website API is temporarily unavailable, the bot logs the issue and displays `Watching made by .sl4m3d` until a later update succeeds.
+The first activity is set when the bot becomes ready, then the activity changes every 120 seconds. The bot sets `dnd` on each update. The activity alternates every 120 seconds even when the API is down; the bot shows `Watching codes status unavailable` if it has not obtained a valid count yet. `/status` diagnoses the API and explicitly reports HTML/JavaScript challenge responses.
 
 Keep `.env` private. Never commit your Discord token or the generated API URL; the URL contains the private API key.
+
+## Hosting note
+
+If `/status` receives a `text/html` JavaScript browser-check page instead of JSON, this is a hosting-layer block from the current InfinityFree setup. Bot code cannot turn that HTML into the API data. The API must be served from a host that permits machine-to-machine requests, or the website hosting must be moved. Do not treat an HTTP 200 alone as API success.

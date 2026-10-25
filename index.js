@@ -13,6 +13,7 @@ if (!TOKEN || !CLIENT_ID || !API_URL || API_URL.includes('PASTE_THE_COMPLETE_API
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 let categoriesCache = [];
+let lastAvailableCount = null;
 let presenceToggle = false;
 let presenceTimer;
 
@@ -43,20 +44,41 @@ async function fetchCategories() {
 }
 
 async function updatePresence() {
-  try {
-    if (!presenceToggle) {
+  // Toggle the activity on every scheduled update, even when the website API is unavailable.
+  if (!presenceToggle) {
+    try {
       const result = await api('available_count');
-      const count = Number.isFinite(Number(result.available)) ? Number(result.available) : 0;
-      client.user.setPresence({ status: 'dnd', activities: [{ name: `${count} available codes`, type: ActivityType.Watching }] });
-    } else {
-      client.user.setPresence({ status: 'dnd', activities: [{ name: 'made by .sl4m3d', type: ActivityType.Watching }] });
+      const count = Number(result.available);
+      if (!Number.isFinite(count)) throw new Error('API response did not contain a numeric available count.');
+      lastAvailableCount = count;
+    } catch (error) {
+      console.error(`[presence] ${error.message}`);
     }
-  } catch (error) {
-    console.error(`[presence] ${error.message}`);
-    // Keep the requested DND status and use a safe fallback if the website is temporarily offline.
+    const label = lastAvailableCount === null ? 'codes status unavailable' : `${lastAvailableCount} available codes`;
+    client.user.setPresence({ status: 'dnd', activities: [{ name: label, type: ActivityType.Watching }] });
+  } else {
     client.user.setPresence({ status: 'dnd', activities: [{ name: 'made by .sl4m3d', type: ActivityType.Watching }] });
   }
   presenceToggle = !presenceToggle;
+}
+
+async function websiteStatus() {
+  const started = Date.now();
+  try {
+    const health = await api('health');
+    const [categoriesResult, countResult] = await Promise.all([api('categories'), api('available_count')]);
+    const categories = Array.isArray(categoriesResult.categories) ? categoriesResult.categories : [];
+    const count = Number(countResult.available);
+    return {
+      ok: true,
+      latency: Date.now() - started,
+      service: health.service || 'NexVault API',
+      categories: categories.length,
+      available: Number.isFinite(count) ? count : 'unknown',
+    };
+  } catch (error) {
+    return { ok: false, latency: Date.now() - started, error: error.message };
+  }
 }
 
 client.once(Events.ClientReady, async readyClient => {
@@ -81,6 +103,16 @@ client.on(Events.InteractionCreate, async interaction => {
       return;
     }
     if (!interaction.isChatInputCommand()) return;
+    if (interaction.commandName === 'status') {
+      await interaction.deferReply({ ephemeral: true });
+      const status = await websiteStatus();
+      if (status.ok) {
+        await interaction.editReply(`**NexVault connection: ONLINE**\nWebsite API: responding with valid JSON\nLatency: ${status.latency} ms\nCategories: ${status.categories}\nAvailable codes: ${status.available}\nBot: online`);
+      } else {
+        await interaction.editReply(`**NexVault connection: OFFLINE / BLOCKED**\nBot: online\nWebsite API check failed after ${status.latency} ms.\n\`\`\`${status.error.slice(0, 900)}\`\`\`\nThe website must return JSON to the bot; a JavaScript browser-check HTML page means the hosting security layer is blocking the API request.`);
+      }
+      return;
+    }
     if (interaction.commandName === 'generate') {
       await interaction.deferReply({ ephemeral: true });
       if (!interaction.inGuild() || !interaction.guildId) {

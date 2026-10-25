@@ -8,6 +8,9 @@ if (!DISCORD_TOKEN || !CLIENT_ID) {
 }
 const commands = [
   new SlashCommandBuilder()
+    .setName('status')
+    .setDescription('Check whether the bot can communicate with the NexVault website API'),
+  new SlashCommandBuilder()
     .setName('generate')
     .setDescription('Request a one-time NexVault redemption code')
     .addStringOption(option => option
