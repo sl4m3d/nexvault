@@ -7,6 +7,10 @@ Discord.js v14 bot for `NexVault`. It provides `/generate category:<category>` a
 
 The available count comes from the PHP API and includes only codes in active categories with `available` status.
 
+## Important: API hosting
+
+The website and API must be hosted on a service that allows direct server-to-server requests. Do not use the previous InfinityFree URL for the bot API, because its free-tier JavaScript challenge can return HTML instead of JSON. Deploy the PHP website and database to the new host first, then generate a fresh API URL in the new Admin Panel. The free HOKAS plan advertises PHP, MySQL and public URLs, but its uptime allowance must be renewed by watching an ad; this is free but not guaranteed always-on.
+
 ## Requirements
 
 - Node.js 20 or newer
@@ -20,7 +24,7 @@ InfinityFree is for the PHP website; do not try to run this bot as a persistent 
 
 1. Copy `.env.example` to `.env`.
 2. Fill in `DISCORD_TOKEN`, `CLIENT_ID`, and `NEXVAULT_API`.
-3. Log in to the website as `admin`, open Admin Panel, and use **Generate / rotate bot API key**. Copy the complete URL shown once (it starts with `https://nexvault.is-great.org/api/index.php?key=`) and paste the entire URL into `NEXVAULT_API` in `.env`. You do not need a local computer or PHP CLI to create it. If lost, generate a replacement in Admin Panel; the old key is immediately revoked.
+3. Log in to the website as `admin`, open Admin Panel, and use **Generate / rotate bot API key**. Copy the complete URL shown once (it starts with `https://YOUR-NEW-HOST/api/index.php?key=`) and paste the entire URL into `NEXVAULT_API` in `.env`. You do not need a local computer or PHP CLI to create it. If lost, generate a replacement in Admin Panel; the old key is immediately revoked.
 4. In this directory, run `npm install`.
 5. Optionally set `GUILD_ID` for quick testing in one server. Leave it blank to register the command globally (global command propagation may take time).
 6. Run `npm run deploy-commands` once whenever command definitions change.
